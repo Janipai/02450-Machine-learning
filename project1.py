@@ -26,7 +26,7 @@ x = raw_data[:,columns]
 attributeNames = np.asarray(df.columns[columns])
 # %%
 ### data visualization
-dd = pd.DataFrame(x[:,10])
+dd = pd.DataFrame(x[:,9])
 plt.figure()
 
 # std data
@@ -34,6 +34,28 @@ features = [" RI", " Na", "Mg", "Al", "Si", "K", "Ca", "Ba", "Fe"]
 xx = df.loc[:, features].values
 xx = StandardScaler().fit_transform(xx)
 
+#Check for missing values
+df.isnull().sum()
+
+#Check data types
+df.dtypes
+
+#Convert Type to categorical variable
+df['Type'] = pd.Categorical(df['Type'])
+
+sns.boxplot(x='Type',y='RI', data=df)
+plt.show()
+
+sns.pairplot(df)
+plt.show()
+
+sns.set(font_scale=1.2)
+sns.set_style("whitegrid")
+plt.figure(figsize=(10,8))
+sns.heatmap(df.corr(), cmap="YlGnBu", annot=True)
+plt.title("Correlation Heatmap for Glass Indentification Dataset")
+plt.show()
+# %%
 # PCA
 pca = PCA()
 principleComponent = pca.fit_transform(xx)
@@ -70,7 +92,7 @@ plt.show()
 # %%
 # figure over temp
 fig = plt.figure()
-fig.suptitle('Type of glass', fontsize=14, fontweight='bold')
+fig.suptitle('Fe', fontsize=14, fontweight='bold')
 
 ax = fig.add_subplot(111)
 ax.boxplot(dd)
@@ -82,29 +104,53 @@ plt.show()
 # %%
 #hist over temp
 plt.hist(dd)
-plt.title('Type of glass')
+plt.title('Fe')
 plt.xlabel('Class')
 plt.ylabel('Obervations')
 plt.grid(axis = 'x')
 plt.show()
 
-# %%
-# 2.1.1
+#%% PCA
 
-X = np.empty((90, 8))
-for i, col_id in enumerate(range(3, 11)):
-    X[:, i] = np.asarray(df.col_values(col_id, 2, 92))
+classLabels = raw_data[:,-1]
 
-# %%
-# 2.1.3
+classNames = np.unique(classLabels)
+
+classDict = dict(zip(classNames, range(len(classNames))))
+
+y = np.array([classDict[cl] for cl in classLabels])
+
+N, M = x.shape
+
+C = len(classNames)
+#PCA 
+#From ex2_1_1
+# Extract vector y, convert to NumPy array
+y = np.asarray([classDict[value] for value in classLabels])
+
+# Preallocate memory, then extract csv data to matrix X
+X = np.empty((214, 10))
+for i, col_id in enumerate(range(0, 10)):
+    X[:, i] = np.asarray(raw_data[:,col_id])
+
+# Compute values of N, M and C.
+N = len(y)
+M = len(attributeNames)
+C = len(classNames)
+
 # Subtract mean value from data
 Y = X - np.ones((N,1))*X.mean(axis=0)
+# removes the standard deviation.
+Y = Y/(np.ones((N,1))*X.std(axis=0))
+
 
 # PCA by computing SVD of Y
 U,S,V = svd(Y,full_matrices=False)
 
+
 # Compute variance explained by principal components
 rho = (S*S) / (S*S).sum() 
+
 
 threshold = 0.9
 
@@ -118,4 +164,69 @@ plt.xlabel('Principal component');
 plt.ylabel('Variance explained');
 plt.legend(['Individual','Cumulative','Threshold'])
 plt.grid()
+plt.show()
+
+#end of PCA analisys
+#PCA 
+#From ex2_1_1
+# Extract vector y, convert to NumPy array
+y = np.asarray([classDict[value] for value in classLabels])
+
+# Preallocate memory, then extract csv data to matrix X
+X = np.empty((214, 10))
+for i, col_id in enumerate(range(1, 10)):
+    X[:, i] = np.asarray(raw_data[:,col_id])
+
+# Compute values of N, M and C.
+N = len(y)
+M = len(attributeNames)
+C = len(classNames)
+
+# Subtract mean value from data
+Y = X - np.ones((N,1))*X.mean(axis=0)
+# removes the standard deviation.
+Y = Y/(np.ones((N,1))*X.std(axis=0))
+
+
+# PCA by computing SVD of Y
+U,S,V = svd(Y,full_matrices=False)
+
+
+# Compute variance explained by principal components
+rho = (S*S) / (S*S).sum() 
+
+
+threshold = 0.9
+
+# Plot variance explained
+plt.figure()
+plt.plot(range(1,len(rho)+1),rho,'x-')
+plt.plot(range(1,len(rho)+1),np.cumsum(rho),'o-')
+plt.plot([1,len(rho)],[threshold, threshold],'k--')
+plt.title('Variance explained by principal components');
+plt.xlabel('Principal component');
+plt.ylabel('Variance explained');
+plt.legend(['Individual','Cumulative','Threshold'])
+plt.grid()
+plt.show()
+
+#%% Doesnt work
+# percent of the variance. Let's look at their coefficients:
+U,S,Vh = svd(Y,full_matrices=False)
+V=Vh.T
+N,M = X.shape
+
+pcs = [0,1,2]
+legendStrs = ['PC'+str(e+1) for e in pcs]
+c = ['r','g','b']
+bw = .2
+r = np.arange(1,M+1)
+for i in pcs:    
+    plt.bar(r+i*bw, V[:,i], width=bw)
+plt.xticks(r+bw, attributeNames)
+plt.xlabel('Attributes')
+plt.ylabel('Component coefficients')
+plt.legend(legendStrs)
+plt.grid()
+plt.title('PCA Component Coefficients')
 plt.show()
